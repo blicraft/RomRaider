@@ -186,6 +186,9 @@ import com.romraider.logger.ecu.ui.tab.injector.InjectorTab;
 import com.romraider.logger.ecu.ui.tab.injector.InjectorTabImpl;
 import com.romraider.logger.ecu.ui.tab.maf.MafTab;
 import com.romraider.logger.ecu.ui.tab.maf.MafTabImpl;
+import com.romraider.logger.ecu.ui.tab.tuning.AutoTuneTab;
+import com.romraider.logger.ecu.ui.handler.tuning.AutoTuneUpdateHandler;
+import com.romraider.logger.ecu.tuning.AutoTuneManager;
 import com.romraider.logger.external.core.ExternalDataItem;
 import com.romraider.logger.external.core.ExternalDataSource;
 import com.romraider.logger.external.core.ExternalDataSourceLoader;
@@ -283,6 +286,11 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private DynoUpdateHandler dynoUpdateHandler;
     private DataUpdateHandlerManager dynoHandlerManager;
     private DataRegistrationBroker dynoTabBroker;
+    private AutoTuneTab autoTuneTab;
+    private AutoTuneUpdateHandler autoTuneUpdateHandler;
+    private DataUpdateHandlerManager autoTuneHandlerManager;
+    private DataRegistrationBroker autoTuneTabBroker;
+    private AutoTuneManager autoTuneManager;
     private EcuInit ecuInit;
     private JToggleButton logToFileButton;
     private List<ExternalDataSource> externalDataSources;
@@ -325,10 +333,12 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         mafTab = new MafTabImpl(mafTabBroker, ecuEditor);
         injectorTab = new InjectorTabImpl(injectorTabBroker, ecuEditor);
         dynoTab = new DynoTabImpl(dynoTabBroker, ecuEditor);
+        autoTuneTab = new AutoTuneTab(autoTuneTabBroker, ecuEditor, autoTuneManager);
 
         injectorUpdateHandler.setInjectorTab(injectorTab);
         mafUpdateHandler.setMafTab(mafTab);
         dynoUpdateHandler.setDynoTab(dynoTab);
+        autoTuneUpdateHandler.setAutoTuneTab(autoTuneTab);
     }
 
     private void construct() {
@@ -443,9 +453,11 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         mafUpdateHandler = new MafUpdateHandler();
         injectorUpdateHandler = new InjectorUpdateHandler();
         dynoUpdateHandler = new DynoUpdateHandler();
+        autoTuneManager = new AutoTuneManager();
+        autoTuneUpdateHandler = new AutoTuneUpdateHandler(autoTuneManager);
         controller = new LoggerControllerImpl(ecuInitCallback, this, liveDataUpdateHandler,
                 graphUpdateHandler, dashboardUpdateHandler, mafUpdateHandler, injectorUpdateHandler,
-                dynoUpdateHandler, fileUpdateHandler, TableUpdateHandler.getInstance(), DataflowSimulationHandler.getInstance());
+                dynoUpdateHandler, autoTuneUpdateHandler, fileUpdateHandler, TableUpdateHandler.getInstance(), DataflowSimulationHandler.getInstance());
 
         mafHandlerManager = new DataUpdateHandlerManagerImpl();
         mafTabBroker = new DataRegistrationBrokerImpl(controller, mafHandlerManager);
@@ -461,6 +473,11 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         dynoTabBroker = new DataRegistrationBrokerImpl(controller, dynoHandlerManager);
         dynoTab = new DynoTabImpl(dynoTabBroker, ecuEditor);
         dynoUpdateHandler.setDynoTab(dynoTab);
+
+        autoTuneHandlerManager = new DataUpdateHandlerManagerImpl();
+        autoTuneTabBroker = new DataRegistrationBrokerImpl(controller, autoTuneHandlerManager);
+        autoTuneTab = new AutoTuneTab(autoTuneTabBroker, ecuEditor, autoTuneManager);
+        autoTuneUpdateHandler.setAutoTuneTab(autoTuneTab);
 
         resetManager = new ResetManagerImpl(this);
         messageLabel = new JLabel(ECU_LOGGER_TITLE);
@@ -835,6 +852,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         mafTab.setEcuParams(ecuParams);
         injectorTab.setEcuParams(ecuParams);
         dynoTab.setEcuParams(ecuParams);
+        autoTuneTab.setEcuParams(ecuParams);
         this.ecuParams = new ArrayList<EcuParameter>(ecuParams);
     }
 
@@ -849,6 +867,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         mafTab.setEcuSwitches(ecuSwitches);
         injectorTab.setEcuSwitches(ecuSwitches);
         dynoTab.setEcuSwitches(ecuSwitches);
+        autoTuneTab.setEcuSwitches(ecuSwitches);
     }
 
     private List<ExternalData> getExternalData(List<ExternalDataSource> externalDataSources) {
@@ -880,6 +899,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         mafTab.setExternalDatas(externalDatas);
         injectorTab.setExternalDatas(externalDatas);
         dynoTab.setExternalDatas(externalDatas);
+        autoTuneTab.setExternalDatas(externalDatas);
     }
 
     private void setDefaultUnits(UserProfile profile, LoggerData loggerData) {
@@ -999,6 +1019,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
             tabbedPane.add("MAF", mafTab.getPanel());
             tabbedPane.add("Injector", injectorTab.getPanel());
             tabbedPane.add("Dyno", dynoTab.getPanel());
+            tabbedPane.add("Auto Tune", autoTuneTab.getPanel());
         }
         else
         {
@@ -1036,6 +1057,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
             tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>" + "MAF"+ "</body></html>", mafTab.getPanel());
             tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>" + "Injector"+ "</body></html>", injectorTab.getPanel());
             tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>" + "Dyno" + "</body></html>", dynoTab.getPanel());
+            tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>" + "Auto Tune" + "</body></html>", autoTuneTab.getPanel());
         }
 
         //Check for definitions only when we open the dyno tab
