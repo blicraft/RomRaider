@@ -1,5 +1,5 @@
 The subaru select monitor protocol uses an ISO9141 interface and uses UART settings: 4800 bps n, 8, 1
-All data is sent and recieved using small packets that all share a common header.
+All data is sent and received using small packets that all share a common header.
 
 
 
