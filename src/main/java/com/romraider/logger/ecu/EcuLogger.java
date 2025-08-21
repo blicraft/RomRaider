@@ -92,6 +92,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -272,6 +273,8 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private JSplitPane splitPane;
     private JPanel graphPanel;
     private GraphUpdateHandler graphUpdateHandler;
+    private JPanel customGraphPanel;
+    private GraphUpdateHandler customGraphUpdateHandler;
     private JPanel dashboardPanel;
     private DashboardUpdateHandler dashboardUpdateHandler;
     private MafTab mafTab;
@@ -298,6 +301,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private SerialPortRefresher refresher;
     private JWindow startStatus;
     private final JLabel startText = new JLabel(rb.getString("INITIALIZELOGGER"));
+    private PlaybackManagerImpl playbackManager;
     private final String HOME = System.getProperty("user.home");
     private StatusIndicator statusIndicator;
     private List<EcuSwitch> dtcodes = new ArrayList<EcuSwitch>();
@@ -448,6 +452,8 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         liveDataUpdateHandler = new LiveDataUpdateHandler(dataTableModel);
         graphPanel = new JPanel(new BorderLayout(2, 2));
         graphUpdateHandler = new GraphUpdateHandler(graphPanel);
+        customGraphPanel = new JPanel(new BorderLayout(2, 2));
+        customGraphUpdateHandler = new GraphUpdateHandler(customGraphPanel);
         dashboardPanel = new JPanel(new BetterFlowLayout(FlowLayout.CENTER, 3, 3));
         dashboardUpdateHandler = new DashboardUpdateHandler(dashboardPanel, getSettings().getLoggerSelectedGaugeIndex());
         mafUpdateHandler = new MafUpdateHandler();
@@ -1016,6 +1022,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                                     buildUnselectAllButton(),
                                     buildLtvButton(),
                                     buildToggleGaugeStyleButton());
+            tabbedPane.add("Analysis", buildAnalysisTab());
             tabbedPane.add("MAF", mafTab.getPanel());
             tabbedPane.add("Injector", injectorTab.getPanel());
             tabbedPane.add("Dyno", dynoTab.getPanel());
@@ -1050,10 +1057,11 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                                     dashboardTabParamListTableModel,
                                     dashboardTabSwitchListTableModel,
                                     dashboardTabExternalListTableModel),
-                                    buildDashboardTab()),
+                    buildDashboardTab()),
                                     buildUnselectAllButton(),
                                     buildLtvButton(),
                                     buildToggleGaugeStyleButton());
+            tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>Analysis</body></html>", buildAnalysisTab());
             tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>" + "MAF"+ "</body></html>", mafTab.getPanel());
             tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>" + "Injector"+ "</body></html>", injectorTab.getPanel());
             tabbedPane.add("<html><body leftmargin=15 topmargin=15 marginwidth=15 marginheight=15>" + "Dyno" + "</body></html>", dynoTab.getPanel());
@@ -1815,6 +1823,78 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         JScrollPane sp = new JScrollPane(dashboardPanel, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_NEVER);
         sp.getVerticalScrollBar().setUnitIncrement(40);
         panel.add(sp, CENTER);
+        return panel;
+    }
+
+    private JComponent buildAnalysisTab() {
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.add("Playback", buildPlaybackTab());
+        tabs.add("Custom Graphs", buildCustomGraphTab());
+        tabs.add("Map Compare", buildMapCompareTab());
+        return tabs;
+    }
+
+    private Component buildPlaybackTab() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton loadButton = new JButton("Load Log");
+        loadButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser chooser = new JFileChooser();
+                if (chooser.showOpenDialog(EcuLogger.this) == JFileChooser.APPROVE_OPTION) {
+                    File file = chooser.getSelectedFile();
+                    playbackManager = new PlaybackManagerImpl(ecuParams,
+                            liveDataUpdateHandler,
+                            graphUpdateHandler,
+                            dashboardUpdateHandler,
+                            mafUpdateHandler,
+                            dynoUpdateHandler,
+                            customGraphUpdateHandler,
+                            TableUpdateHandler.getInstance());
+                    playbackManager.load(file);
+                }
+            }
+        });
+
+        JButton playButton = new JButton("Play");
+        playButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (playbackManager != null) {
+                    runAsDaemon(new Runnable() {
+                        @Override
+                        public void run() {
+                            playbackManager.play();
+                        }
+                    });
+                }
+            }
+        });
+
+        panel.add(loadButton);
+        panel.add(playButton);
+        return panel;
+    }
+
+    private Component buildCustomGraphTab() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JButton resetButton = new JButton(rb.getString("RESETDATA"));
+        resetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                customGraphUpdateHandler.reset();
+            }
+        });
+        panel.add(resetButton, NORTH);
+        JScrollPane sp = new JScrollPane(customGraphPanel, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        sp.getVerticalScrollBar().setUnitIncrement(40);
+        panel.add(sp, CENTER);
+        return panel;
+    }
+
+    private Component buildMapCompareTab() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(new JLabel("Map comparison not yet implemented."), CENTER);
         return panel;
     }
 
