@@ -60,6 +60,7 @@ import com.romraider.net.BrowserControl;
 import com.romraider.ramtune.test.RamTuneTestApp;
 import com.romraider.util.ResourceUtil;
 import com.romraider.util.SettingsManager;
+import com.formdev.flatlaf.FlatLaf;
 
 public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 
@@ -89,9 +90,13 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 	private final JMenuItem convertDecrease = new JMenuItem(rb.getString("ONE92"));
 	private final ButtonGroup convertGroup = new ButtonGroup();
 
-	private final JMenu viewMenu = new JMenu(rb.getString("VIEW"));
-	private final JMenuItem romProperties = new JMenuItem(rb.getString("PROPERTIES"));
-	private final ButtonGroup levelGroup = new ButtonGroup();
+        private final JMenu viewMenu = new JMenu(rb.getString("VIEW"));
+        private final JMenuItem romProperties = new JMenuItem(rb.getString("PROPERTIES"));
+        private final JMenu themeMenu = new JMenu(rb.getString("THEME"));
+        private final ButtonGroup themeGroup = new ButtonGroup();
+        private final JRadioButtonMenuItem lightTheme = new JRadioButtonMenuItem(rb.getString("LIGHT"));
+        private final JRadioButtonMenuItem darkTheme = new JRadioButtonMenuItem(rb.getString("DARK"));
+        private final ButtonGroup levelGroup = new ButtonGroup();
 	private final JMenu levelMenu = new JMenu(rb.getString("USERLVL"));
 	private final JRadioButtonMenuItem level1 = new JRadioButtonMenuItem(rb.getString("BEGIN"));
 	private final JRadioButtonMenuItem level2 = new JRadioButtonMenuItem(rb.getString("INTER"));
@@ -201,12 +206,26 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 		add(viewMenu);
 		viewMenu.setMnemonic('V');
 
-		viewMenu.add(romProperties);
-		romProperties.addActionListener(this);
-		romProperties.setMnemonic('P');
+                viewMenu.add(romProperties);
+                romProperties.addActionListener(this);
+                romProperties.setMnemonic('P');
 
-		viewMenu.add(levelMenu);
-		levelMenu.setMnemonic('U');
+                viewMenu.add(themeMenu);
+                themeMenu.setMnemonic('T');
+
+                themeMenu.add(lightTheme);
+                lightTheme.addActionListener(this);
+                lightTheme.setMnemonic('L');
+
+                themeMenu.add(darkTheme);
+                darkTheme.addActionListener(this);
+                darkTheme.setMnemonic('D');
+
+                themeGroup.add(lightTheme);
+                themeGroup.add(darkTheme);
+
+                viewMenu.add(levelMenu);
+                levelMenu.setMnemonic('U');
 
 		levelMenu.add(level1);
 		level1.addActionListener(this);
@@ -232,7 +251,13 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 		levelGroup.add(level2);
 		levelGroup.add(level3);
 		levelGroup.add(level4);
-		levelGroup.add(level5);
+                levelGroup.add(level5);
+
+                if ("dark".equalsIgnoreCase(getSettings().getLookAndFeel())) {
+                        darkTheme.setSelected(true);
+                } else {
+                        lightTheme.setSelected(true);
+                }
 
 		// select correct userlevel button
 		if (getSettings().getUserLevel() == 1) {
@@ -433,13 +458,24 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 		} else if (e.getSource() == level4) {
 			parent.setUserLevel(4);
 
-		} else if (e.getSource() == level5) {
-			parent.setUserLevel(5);
+                } else if (e.getSource() == level5) {
+                        parent.setUserLevel(5);
+                } else if (e.getSource() == lightTheme) {
+                        getSettings().setLookAndFeel("light");
+                        SettingsManager.save(getSettings());
+                        LookAndFeelManager.initLookAndFeel();
+                        FlatLaf.updateUI();
 
-		} else if (e.getSource() == openLogger) {
-			parent.launchLogger();
-		} else if (e.getSource() == updateDefinition) {
-			BrowserControl.displayURL(ECU_DEFS_URL);
+                } else if (e.getSource() == darkTheme) {
+                        getSettings().setLookAndFeel("dark");
+                        SettingsManager.save(getSettings());
+                        LookAndFeelManager.initLookAndFeel();
+                        FlatLaf.updateUI();
+
+                } else if (e.getSource() == openLogger) {
+                        parent.launchLogger();
+                } else if (e.getSource() == updateDefinition) {
+                        BrowserControl.displayURL(ECU_DEFS_URL);
 
 		} else if (e.getSource() == launchRamTuneTestApp) {
 			RamTuneTestApp.startTestApp(DISPOSE_ON_CLOSE);

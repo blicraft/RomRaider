@@ -187,6 +187,7 @@ public class Settings implements Serializable {
     private boolean saveDebugTables = true;
     private boolean displayHighTables = true;
     private boolean valueLimitWarning = true;
+    private String lookAndFeel = "light";
 
     private Font tableFont = new Font("Arial", Font.BOLD, 11);
     private Dimension cellSize = new Dimension(42, 18);
@@ -546,6 +547,14 @@ public class Settings implements Serializable {
 
     public void setValueLimitWarning(boolean valueLimitWarning) {
         this.valueLimitWarning = valueLimitWarning;
+    }
+
+    public String getLookAndFeel() {
+        return lookAndFeel;
+    }
+
+    public void setLookAndFeel(String lookAndFeel) {
+        this.lookAndFeel = lookAndFeel;
     }
 
     public Color getWarningColor() {

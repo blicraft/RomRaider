@@ -161,6 +161,9 @@ public final class DOMSettingsUnmarshaller {
             } else if (n.getNodeType() == ELEMENT_NODE && n.getNodeName().equalsIgnoreCase("valuelimitwarning")) {
                 settings.setValueLimitWarning(Boolean.parseBoolean(unmarshallAttribute(n, "value", "true")));
 
+            } else if (n.getNodeType() == ELEMENT_NODE && n.getNodeName().equalsIgnoreCase("lookandfeel")) {
+                settings.setLookAndFeel(unmarshallAttribute(n, "value", "light"));
+
             } else if (n.getNodeType() == ELEMENT_NODE && n.getNodeName().equalsIgnoreCase("coloraxis")) {
                 settings.setColorAxis(Boolean.parseBoolean(unmarshallAttribute(n, "value", "false")));
 

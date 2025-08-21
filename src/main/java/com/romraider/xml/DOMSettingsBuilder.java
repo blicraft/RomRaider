@@ -206,6 +206,11 @@ public final class DOMSettingsBuilder {
         valueLimitWarning.setAttribute("value", String.valueOf(settings.isValueLimitWarning()));
         options.appendChild(valueLimitWarning);
 
+        // look and feel
+        IIOMetadataNode lookAndFeel = new IIOMetadataNode("lookandfeel");
+        lookAndFeel.setAttribute("value", settings.getLookAndFeel());
+        options.appendChild(lookAndFeel);
+
         // color axis
         IIOMetadataNode colorAxis = new IIOMetadataNode("coloraxis");
         colorAxis.setAttribute("value", String.valueOf(settings.isColorAxis()));

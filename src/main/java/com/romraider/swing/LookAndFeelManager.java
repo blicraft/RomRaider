@@ -20,17 +20,18 @@
 package com.romraider.swing;
 
 import static com.romraider.Version.PRODUCT_NAME;
-import static com.romraider.util.Platform.LINUX;
 import static com.romraider.util.Platform.MAC_OS_X;
 import static com.romraider.util.Platform.isPlatform;
-import static javax.swing.UIManager.getCrossPlatformLookAndFeelClassName;
-import static javax.swing.UIManager.getSystemLookAndFeelClassName;
-import static javax.swing.UIManager.setLookAndFeel;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
 import org.apache.log4j.Logger;
+
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import com.romraider.Settings;
+import com.romraider.util.SettingsManager;
 
 public final class LookAndFeelManager {
     private static final Logger LOGGER = Logger.getLogger(LookAndFeelManager.class);
@@ -49,7 +50,12 @@ public final class LookAndFeelManager {
                 System.setProperty("com.apple.mrj.application.apple.menu.about.name", PRODUCT_NAME);
             }
 
-            setLookAndFeel(getLookAndFeel());
+            Settings settings = SettingsManager.getSettings();
+            if ("dark".equalsIgnoreCase(settings.getLookAndFeel())) {
+                FlatDarkLaf.setup();
+            } else {
+                FlatLightLaf.setup();
+            }
 
             // make sure we have nice window decorations.
             JFrame.setDefaultLookAndFeelDecorated(true);
@@ -58,12 +64,5 @@ public final class LookAndFeelManager {
         } catch (Exception ex) {
             LOGGER.error("Error loading system look and feel.", ex);
         }
-    }
-
-    private static String getLookAndFeel() {
-//        if (true) return "com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel";
-        // Linux has issues with the gtk look and feel themes.
-        if (isPlatform(LINUX)) return getCrossPlatformLookAndFeelClassName();
-        return getSystemLookAndFeelClassName();
     }
 }
