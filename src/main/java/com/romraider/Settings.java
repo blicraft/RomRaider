@@ -283,7 +283,7 @@ public class Settings implements Serializable {
     /**
      * Sets if we search for the ELM327 on startup (small delay)
      */
-	private Boolean searchElm327 = false;
+    private boolean searchElm327 = false;
 
     public Settings() {
         //center window by default
@@ -995,9 +995,9 @@ public class Settings implements Serializable {
         return this.tpsThreshold;
     }
 
-	public boolean getElm327Enabled() {
-		return this.searchElm327;
-	}
+    public boolean isElm327Enabled() {
+        return this.searchElm327;
+    }
 
     public void setSelectedCar(final String value) {
         this.selectedCar = value;
@@ -1015,9 +1015,9 @@ public class Settings implements Serializable {
         this.tpsThreshold = value;
     }
 
-	public void setElm327Enabled(Boolean value) {
-		this.searchElm327 = value;
-	}
+    public void setElm327Enabled(boolean value) {
+        this.searchElm327 = value;
+    }
 
     public void setTableTreeSorted(Boolean value) {
         this.sortTableTree = value;

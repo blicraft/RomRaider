@@ -49,7 +49,7 @@ public final class ConnectionManagerFactory {
         // Try a serial connection
         if (isNullOrEmpty(settings.getJ2534Device())) {
 
-            if(SettingsManager.getSettings().getElm327Enabled()) {
+            if(SettingsManager.getSettings().isElm327Enabled()) {
                 LOGGER.info("Trying to connect to ELM327...");
                 manager = new ElmConnectionManager(portName, connectionProperties);
             }

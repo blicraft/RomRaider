@@ -2260,9 +2260,9 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         getSettings().setAutoConnectOnStartup(connect);
     }
 
-	public void setElmEnabled(Boolean value) {
+    public void setElm327Enabled(boolean value) {
         getSettings().setElm327Enabled(value);
-	}
+    }
 
     private JProgressBar startbar() {
         startStatus = new JWindow();
