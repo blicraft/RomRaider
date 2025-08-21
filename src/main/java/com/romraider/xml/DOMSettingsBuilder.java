@@ -392,6 +392,7 @@ public final class DOMSettingsBuilder {
         // debug level
         IIOMetadataNode debug = new IIOMetadataNode("debug");
         debug.setAttribute("level", settings.getLoggerDebuggingLevel());
+        debug.setAttribute("tofile", String.valueOf(settings.isDebugToFile()));
         loggerSettings.appendChild(debug);
 
         // plugin ports

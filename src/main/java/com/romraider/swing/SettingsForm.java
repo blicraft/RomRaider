@@ -923,6 +923,7 @@ public class SettingsForm extends JFrame implements MouseListener {
             newSettings.setUserLevel(curSettings.getUserLevel());
             newSettings.setLoggerDefinitionFilePath(curSettings.getLoggerDefinitionFilePath());
             newSettings.setLoggerDebuggingLevel(curSettings.getLoggerDebuggingLevel());
+            newSettings.setDebugToFile(curSettings.isDebugToFile());
             newSettings.setLoggerProfileFilePath(curSettings.getLoggerProfileFilePath());
             newSettings.setLoggerOutputDirPath(curSettings.getLoggerOutputDirPath());
 

@@ -73,6 +73,7 @@ import com.romraider.logger.ecu.ui.swing.menubar.action.LogFileControllerSwitchA
 import com.romraider.logger.ecu.ui.swing.menubar.action.LogFileLocationAction;
 import com.romraider.logger.ecu.ui.swing.menubar.action.LogFileNumberFormatAction;
 import com.romraider.logger.ecu.ui.swing.menubar.action.LoggerDebugLocationAction;
+import com.romraider.logger.ecu.ui.swing.menubar.action.LoggerDebugFileAction;
 import com.romraider.logger.ecu.ui.swing.menubar.action.LoggerDebuggingLevelAction;
 import com.romraider.logger.ecu.ui.swing.menubar.action.LoggerDefinitionLocationAction;
 import com.romraider.logger.ecu.ui.swing.menubar.action.ReadEcuCodesAction;
@@ -196,6 +197,9 @@ public class EcuLoggerMenuBar extends JMenuBar {
         debug.add(info);
         debug.add(db);
         debug.add(trace);
+        RadioButtonMenuItem debugFile = new RadioButtonMenuItem(rb.getString("DEBUGTOFILE"), VK_F, null, new LoggerDebugFileAction(logger), logger.getSettings().isDebugToFile());
+        debugFile.setToolTipText(rb.getString("DEBUGTOFILETT"));
+        debug.add(debugFile);
         debug.add(new JSeparator());
         debug.add(new MenuItem(rb.getString("DEBUGLOC"), new LoggerDebugLocationAction(logger), VK_O, getKeyStroke(VK_O, ALT_MASK)));
         helpMenu.add(debug);
