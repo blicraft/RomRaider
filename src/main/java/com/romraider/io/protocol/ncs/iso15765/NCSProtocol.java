@@ -50,6 +50,8 @@ public final class NCSProtocol implements ProtocolNCS {
     public static final byte LOAD_ADDRESS_RESPONSE = (byte) 0x6C;
     public static final byte READ_LOAD_COMMAND = (byte) 0x21;
     public static final byte READ_LOAD_RESPONSE = (byte) 0x61;
+    public static final byte WRITE_MEMORY_COMMAND = (byte) 0x3D;
+    public static final byte WRITE_MEMORY_RESPONSE = (byte) 0x7D;
     public static final byte ECU_INIT_COMMAND = (byte) 0x10;
     public static final byte ECU_INIT_RESPONSE = (byte) 0x50;
     public static final byte ECU_ID_SID = (byte) 0x21;
@@ -134,13 +136,40 @@ public final class NCSProtocol implements ProtocolNCS {
     }
 
     @Override
-    //TODO: not yet implemented
     public byte[] constructWriteMemoryRequest(
             Module module, byte[] address, byte[] values) {
+        checkNotNull(module, "module");
+        checkNotNullOrEmpty(address, "address");
+        checkNotNullOrEmpty(values, "values");
+        NCSProtocol.module = module;
 
-        throw new UnsupportedProtocolException(
-                "Write memory command is not supported on for address: " +
-                asHex(address));
+        // According to ISO15765/ISO14229 the WriteMemoryByAddress service (0x3D)
+        // consists of the service byte followed by a 4 byte address and a
+        // 2 byte payload length. The positive response (0x7D) echoes the
+        // address/length pair. RomRaider only supports 4 byte addresses and a
+        // payload length up to 0xFFFF bytes. Shorter addresses are left padded
+        // with zeros (or 0xFF for 24 bit RAM addresses with the high bit set).
+        //
+        // Frame layout used here:
+        // 000007E03D [addr3 addr2 addr1 addr0] [len_hi len_lo] payload
+
+        final byte[] frame = new byte[6 + values.length];
+
+        // accommodate variable width addresses by right-aligning within
+        // the first 4 bytes of the frame.
+        if (address.length == 3 && (address[0] & 0x80) == 0x80) {
+            // expand a 6-byte RAM address to 8-bytes
+            frame[0] = (byte) 0xFF;
+        }
+        System.arraycopy(address, 0, frame, 4 - address.length, address.length);
+
+        int len = values.length;
+        frame[4] = (byte) ((len >> 8) & 0xFF);
+        frame[5] = (byte) (len & 0xFF);
+
+        System.arraycopy(values, 0, frame, 6, values.length);
+
+        return buildRequest(WRITE_MEMORY_COMMAND, false, frame);
     }
 
     @Override
@@ -259,6 +288,32 @@ public final class NCSProtocol implements ProtocolNCS {
 
     @Override
     public void checkValidWriteResponse(byte[] data, byte[] processedResponse) {
+        checkNotNullOrEmpty(data, "data");
+        checkNotNullOrEmpty(processedResponse, "processedResponse");
+
+        // ensure the response header and NRC handling are valid
+        NCSResponseProcessor.validateResponse(processedResponse);
+
+        if (processedResponse[4] != WRITE_MEMORY_RESPONSE) {
+            throw new InvalidResponseException(
+                    "Unexpected " + module.getName() + " Write response: " +
+                    asHex(processedResponse));
+        }
+
+        // the response echoes the length of the written payload; verify it
+        if (processedResponse.length < RESPONSE_NON_DATA_BYTES + 7) {
+            throw new InvalidResponseException(
+                    "Invalid " + module.getName() + " Write response length: " +
+                    asHex(processedResponse));
+        }
+
+        int len = ((processedResponse[9] & 0xFF) << 8) |
+                (processedResponse[10] & 0xFF);
+        if (len != data.length) {
+            throw new InvalidResponseException(
+                    "Invalid " + module.getName() + " Write response size: " +
+                    asHex(processedResponse));
+        }
     }
 
     @Override
