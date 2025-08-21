@@ -29,6 +29,7 @@ import static com.romraider.io.protocol.ncs.iso15765.NCSProtocol.READ_MEMORY_RES
 import static com.romraider.io.protocol.ncs.iso15765.NCSProtocol.RESPONSE_NON_DATA_BYTES;
 import static com.romraider.io.protocol.ncs.iso15765.NCSProtocol.LOAD_ADDRESS_RESPONSE;
 import static com.romraider.io.protocol.ncs.iso15765.NCSProtocol.READ_LOAD_RESPONSE;
+import static com.romraider.io.protocol.ncs.iso15765.NCSProtocol.WRITE_MEMORY_RESPONSE;
 import static com.romraider.util.ByteUtil.asUnsignedInt;
 import static com.romraider.util.HexUtil.asHex;
 import static com.romraider.util.ParamChecker.checkNotNullOrEmpty;
@@ -60,7 +61,8 @@ public final class NCSResponseProcessor {
         assertOneOf(new byte[]{ECU_INIT_RESPONSE, ECU_ID_SID_RESPONSE,
                 READ_SID_21_RESPONSE, READ_SID_GRP_RESPONSE,
                 READ_MEMORY_RESPONSE, LOAD_ADDRESS_RESPONSE,
-                READ_LOAD_RESPONSE}, response[4], "Invalid response code");
+                READ_LOAD_RESPONSE, WRITE_MEMORY_RESPONSE},
+                response[4], "Invalid response code");
     }
 
     public static byte[] extractResponseData(byte[] response) {
