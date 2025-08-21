@@ -302,6 +302,7 @@ public final class DOMSettingsUnmarshaller {
 
             } else if (n.getNodeType() == ELEMENT_NODE && n.getNodeName().equalsIgnoreCase("debug")) {
                 settings.setLoggerDebuggingLevel(unmarshallAttribute(n, "level", "info"));
+                settings.setDebugToFile(unmarshallAttribute(n, "tofile", false));
 
             } else if (n.getNodeType() == ELEMENT_NODE && n.getNodeName().equalsIgnoreCase("gauge")) {
                 settings.setLoggerSelectedGaugeIndex(unmarshallAttribute(n, "index", 0));

@@ -113,6 +113,9 @@ import javax.swing.table.TableColumn;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Appender;
+import org.apache.log4j.PatternLayout;
+import org.apache.log4j.RollingFileAppender;
 
 import com.romraider.Settings;
 import com.romraider.Version;
@@ -222,6 +225,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private static final String ECU_LOGGER_TITLE = PRODUCT_NAME + " v" + VERSION + " | " + rb.getString("TITLE");
     private static final String LOGGER_FULLSCREEN_ARG = "-logger.fullscreen";
     private static final String LOGGER_TOUCH_ARG = "-logger.touch";
+    private static final String LOGGER_DEBUG_FILE_ARG = "-logger.debugfile";
     private static final URL ICON_PATH =  Settings.class.getResource("/graphics/romraider-ico.gif");
     private static final String HEADING_PARAMETERS = "Parameters";
     private static final String HEADING_SWITCHES = "Switches";
@@ -310,6 +314,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private Map<String, Object> componentList = new HashMap<String, Object>();
     private static boolean touchEnabled = false;
     private final JPanel moduleSelectPanel = new JPanel(new FlowLayout());
+    private Appender debugFileAppender;
 
     private static EcuLogger instance;
 
@@ -346,10 +351,18 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     }
 
     private void construct() {
-        /**
-         * Bitness of supporting libraries must match the bitness of RomRaider
-         * and the running JRE.  Notify and exit if mixed bitness is detected.
-         */
+        checkArchitecture();
+        initLogging();
+        if (ecuEditor == null) {
+            startStandalone();
+        }
+        else {
+            startEmbedded();
+        }
+        this.toFront();
+    }
+
+    private void checkArchitecture() {
         if (!System.getProperty("sun.arch.data.model").equals(Version.BUILD_ARCH)) {
             showMessageDialog(null,
                     MessageFormat.format(
@@ -357,56 +370,84 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                             PRODUCT_NAME, Version.BUILD_ARCH),
                 rb.getString("INCOMPJREERR"),
                 ERROR_MESSAGE);
-            // this will generate a NullPointerException because we never got
-            // things started
             WindowEvent e = new WindowEvent(this, WindowEvent.WINDOW_CLOSED);
             windowClosing(e);
         }
+    }
+
+    private void initLogging() {
         checkNotNull(getSettings());
         Logger.getRootLogger().setLevel(Level.toLevel(getSettings().getLoggerDebuggingLevel()));
+        enableDebugToFile(getSettings().isDebugToFile());
         LOGGER.info("Logger locale: " + System.getProperty("user.language") +
                 "_" + System.getProperty("user.country"));
+    }
 
-        if (ecuEditor == null) {
-            JProgressBar progressBar = startbar();
-            bootstrap();
-            progressBar.setValue(20);
-            startText.setText(rb.getString("LOADINGDEFS"));
-            loadEcuDefs();
-            progressBar.setValue(40);
-            startText.setText(rb.getString("LOADINGPLUG"));
-            progressBar.setIndeterminate(true);
-            loadLoggerPlugins();
-            progressBar.setIndeterminate(false);
-            progressBar.setValue(60);
-            startText.setText(rb.getString("LOADINGPARAMS"));
-            loadLoggerParams();
-            progressBar.setValue(80);
-            startText.setText(rb.getString("STARTINGLOGGER"));
-            initControllerListeners();
-            initUserInterface();
-            progressBar.setValue(100);
-            initDataUpdateHandlers();
-            startPortRefresherThread();
-            startStatus.dispose();
+    private void startStandalone() {
+        JProgressBar progressBar = startbar();
+        bootstrap();
+        progressBar.setValue(20);
+        startText.setText(rb.getString("LOADINGDEFS"));
+        loadEcuDefs();
+        progressBar.setValue(40);
+        startText.setText(rb.getString("LOADINGPLUG"));
+        progressBar.setIndeterminate(true);
+        loadLoggerPlugins();
+        progressBar.setIndeterminate(false);
+        progressBar.setValue(60);
+        startText.setText(rb.getString("LOADINGPARAMS"));
+        loadLoggerParams();
+        progressBar.setValue(80);
+        startText.setText(rb.getString("STARTINGLOGGER"));
+        initControllerListeners();
+        initUserInterface();
+        progressBar.setValue(100);
+        initDataUpdateHandlers();
+        startPortRefresherThread();
+        startStatus.dispose();
+    }
+
+    private void startEmbedded() {
+        bootstrap();
+        ecuEditor.getStatusPanel().update(rb.getString("LOADINGDEFS"), 20);
+        loadEcuDefs();
+        ecuEditor.getStatusPanel().update(rb.getString("LOADINGPLUG"), 40);
+        loadLoggerPlugins();
+        ecuEditor.getStatusPanel().update(rb.getString("LOADINGPARAMS"), 60);
+        loadLoggerParams();
+        ecuEditor.getStatusPanel().update(rb.getString("STARTINGLOGGER"), 80);
+        initControllerListeners();
+        initUserInterface();
+        ecuEditor.getStatusPanel().update(rb.getString("COMPLETE"), 100);
+        initDataUpdateHandlers();
+        startPortRefresherThread();
+        ecuEditor.getStatusPanel().update(rb.getString("READY"),0);
+    }
+
+    public void enableDebugToFile(boolean enable) {
+        Logger root = Logger.getRootLogger();
+        if (enable) {
+            if (debugFileAppender == null) {
+                try {
+                    File logDir = new File(System.getProperty("user.home"), ".RomRaider");
+                    logDir.mkdirs();
+                    String path = logDir.getAbsolutePath() + "/rr_logger_debug.log";
+                    debugFileAppender = new RollingFileAppender(new PatternLayout("%d{ABSOLUTE} %-5p [%t] - %m%n"), path, true);
+                    debugFileAppender.setName("debugFile");
+                } catch (Exception e) {
+                    LOGGER.error("Unable to create debug log file", e);
+                }
+            }
+            if (debugFileAppender != null && root.getAppender("debugFile") == null) {
+                root.addAppender(debugFileAppender);
+            }
+        } else {
+            Appender app = root.getAppender("debugFile");
+            if (app != null) {
+                root.removeAppender(app);
+            }
         }
-        else {
-            bootstrap();
-            ecuEditor.getStatusPanel().update(rb.getString("LOADINGDEFS"), 20);
-            loadEcuDefs();
-            ecuEditor.getStatusPanel().update(rb.getString("LOADINGPLUG"), 40);
-            loadLoggerPlugins();
-            ecuEditor.getStatusPanel().update(rb.getString("LOADINGPARAMS"), 60);
-            loadLoggerParams();
-            ecuEditor.getStatusPanel().update(rb.getString("STARTINGLOGGER"), 80);
-            initControllerListeners();
-            initUserInterface();
-            ecuEditor.getStatusPanel().update(rb.getString("COMPLETE"), 100);
-            initDataUpdateHandlers();
-            startPortRefresherThread();
-            ecuEditor.getStatusPanel().update(rb.getString("READY"),0);
-        }
-        this.toFront();
+        getSettings().setDebugToFile(enable);
     }
 
     private void bootstrap() {
@@ -2212,7 +2253,11 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     public static void startLogger(int defaultCloseOperation, ECUEditor ecuEditor, String[] args) {
         touchEnabled = setTouchEnabled(args);
         boolean fullscreen = containsFullScreenArg(args);
+        boolean debugToFile = containsDebugFileArg(args);
         EcuLogger ecuLogger = getEcuLogger(ecuEditor);
+        if (debugToFile) {
+            ecuLogger.enableDebugToFile(true);
+        }
         createAndShowGui(defaultCloseOperation, ecuLogger, fullscreen);
         if (ecuLogger.getSettings().getAutoConnectOnStartup() && !ecuLogger.isLogging()) ecuLogger.startLogging();
     }
@@ -2227,10 +2272,18 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     }
 
     private static boolean setTouchEnabled(String... args) {
-    	if(args == null) return false;
+        if(args == null) return false;
 
         for (String arg : args) {
             if (LOGGER_TOUCH_ARG.equalsIgnoreCase(arg)) return true;
+        }
+        return false;
+    }
+
+    private static boolean containsDebugFileArg(String... args) {
+        if (args == null) return false;
+        for (String arg : args) {
+            if (LOGGER_DEBUG_FILE_ARG.equalsIgnoreCase(arg)) return true;
         }
         return false;
     }

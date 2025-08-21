@@ -236,6 +236,7 @@ public class Settings implements Serializable {
     private boolean fastPoll = true;
     private double loggerDividerLocation = 400;
     private String loggerDebuggingLevel = "info";
+    private boolean debugToFile;
     private static String j2534Device = "";
     private static String transportProtocol = ISO9141;
 
@@ -760,6 +761,14 @@ public class Settings implements Serializable {
 
     public String getLoggerDebuggingLevel() {
         return loggerDebuggingLevel;
+    }
+
+    public boolean isDebugToFile() {
+        return debugToFile;
+    }
+
+    public void setDebugToFile(boolean debugToFile) {
+        this.debugToFile = debugToFile;
     }
 
     public void setJ2534Device(String j2534Device) {
