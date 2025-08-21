@@ -288,6 +288,21 @@ public final class DOMSettingsUnmarshaller {
                 settings.setLoggerSelectedTabIndex(unmarshallAttribute(n, "selected", 0));
                 settings.setLoggerParameterListState(unmarshallAttribute(n, "showlist", true));
 
+            } else if (n.getNodeType() == ELEMENT_NODE && n.getNodeName().equalsIgnoreCase("tabprefs")) {
+                Map<String, Integer> prefs = new HashMap<String, Integer>();
+                NodeList prefNodes = n.getChildNodes();
+                for (int j = 0; j < prefNodes.getLength(); j++) {
+                    Node tab = prefNodes.item(j);
+                    if (tab.getNodeType() == ELEMENT_NODE && tab.getNodeName().equalsIgnoreCase("tab")) {
+                        String name = unmarshallAttribute(tab, "name", null);
+                        int warn = unmarshallAttribute(tab, "warning", 0);
+                        if (name != null) {
+                            prefs.put(name, warn);
+                        }
+                    }
+                }
+                settings.setTabWarningThresholds(prefs);
+
             } else if (n.getNodeType() == ELEMENT_NODE && n.getNodeName().equalsIgnoreCase("definition")) {
                 settings.setLoggerDefinitionFilePath(unmarshallAttribute(n, "path", settings.getLoggerDefinitionFilePath()));
 

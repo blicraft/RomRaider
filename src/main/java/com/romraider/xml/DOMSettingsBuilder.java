@@ -371,6 +371,18 @@ public final class DOMSettingsBuilder {
         tabs.setAttribute("showlist", String.valueOf(settings.getLoggerParameterListState()));
         loggerSettings.appendChild(tabs);
 
+        Map<String, Integer> tabPrefs = settings.getTabWarningThresholds();
+        if (tabPrefs != null && !tabPrefs.isEmpty()) {
+            IIOMetadataNode prefs = new IIOMetadataNode("tabprefs");
+            for (Map.Entry<String, Integer> entry : tabPrefs.entrySet()) {
+                IIOMetadataNode tab = new IIOMetadataNode("tab");
+                tab.setAttribute("name", entry.getKey());
+                tab.setAttribute("warning", String.valueOf(entry.getValue()));
+                prefs.appendChild(tab);
+            }
+            loggerSettings.appendChild(prefs);
+        }
+
         // definition path
         IIOMetadataNode definition = new IIOMetadataNode("definition");
         definition.setAttribute("path", settings.getLoggerDefinitionFilePath());

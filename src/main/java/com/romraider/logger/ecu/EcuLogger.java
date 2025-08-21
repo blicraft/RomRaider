@@ -43,6 +43,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.sort;
 import static javax.swing.BorderFactory.createLoweredBevelBorder;
 import static javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;
+import static javax.swing.JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT;
 import static javax.swing.JOptionPane.DEFAULT_OPTION;
 import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
@@ -107,6 +108,8 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JWindow;
+import javax.swing.InputMap;
+import javax.swing.ActionMap;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.TableColumn;
@@ -1115,10 +1118,26 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
             public void stateChanged(ChangeEvent e) {
                 if(tabbedPane.getSelectedComponent() == dynoTab.getPanel())
                 {
-                	((DynoTabImpl)dynoTab).getDynoControlPanel().checkDynoDefs();
+                        ((DynoTabImpl)dynoTab).getDynoControlPanel().checkDynoDefs();
                 }
             }
         });
+
+        InputMap im = tabbedPane.getInputMap(WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = tabbedPane.getActionMap();
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            final int index = i;
+            String actionKey = "selectTab" + i;
+            im.put(getKeyStroke("ctrl " + (i + 1)), actionKey);
+            am.put(actionKey, new AbstractAction() {
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    tabbedPane.setSelectedIndex(index);
+                }
+            });
+        }
 
         return tabbedPane;
     }
@@ -1350,6 +1369,25 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
             changeColumnWidth(paramListTable, 0, 20, 75, 75);
             changeColumnWidth(paramListTable, 2, 50, 75, 75);
         }
+
+        paramListTable.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("SPACE"), "toggleParam");
+        paramListTable.getActionMap().put("toggleParam", new AbstractAction() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int row = paramListTable.getSelectedRow();
+                if (row >= 0) {
+                    int modelRow = paramListTable.convertRowIndexToModel(row);
+                    ParameterRow pr = tableModel.getParameterRows().get(modelRow);
+                    boolean selected = !pr.isSelected();
+                    tableModel.selectParam(pr.getLoggerData(), selected);
+                    pr.setSelected(selected);
+                    tableModel.fireTableRowsUpdated(modelRow, modelRow);
+                }
+            }
+        });
+
         return paramListTable;
     }
 
