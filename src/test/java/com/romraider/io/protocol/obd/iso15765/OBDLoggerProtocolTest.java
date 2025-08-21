@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.lang.reflect.Method;
 
 import org.junit.Test;
 
@@ -63,13 +64,15 @@ public class OBDLoggerProtocolTest {
     }
 
     @Test
-    public void testConvertToByteAddressesHandlesVariableLengths() {
+    public void testConvertToByteAddressesHandlesVariableLengths() throws Exception {
         OBDLoggerProtocol protocol = new OBDLoggerProtocol();
         Collection<EcuQuery> queries = Arrays.<EcuQuery>asList(
                 new StubQuery("0x1", "0x2345"),
                 new StubQuery("0x67"),
                 new StubQuery("0x89AB"));
-        byte[][] addresses = protocol.convertToByteAddresses(queries);
+        Method m = OBDLoggerProtocol.class.getDeclaredMethod("convertToByteAddresses", Collection.class);
+        m.setAccessible(true);
+        byte[][] addresses = (byte[][]) m.invoke(protocol, queries);
         assertArrayEquals(new byte[]{0x01}, addresses[0]);
         assertArrayEquals(new byte[]{0x23, 0x45}, addresses[1]);
         assertArrayEquals(new byte[]{0x67}, addresses[2]);
