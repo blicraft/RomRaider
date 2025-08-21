@@ -27,8 +27,11 @@ import static javax.swing.UIManager.getCrossPlatformLookAndFeelClassName;
 import static javax.swing.UIManager.getSystemLookAndFeelClassName;
 import static javax.swing.UIManager.setLookAndFeel;
 
+import java.awt.Window;
+
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 import org.apache.log4j.Logger;
 
@@ -40,23 +43,29 @@ public final class LookAndFeelManager {
     }
 
     public static void initLookAndFeel() {
+        if (isPlatform(MAC_OS_X)) {
+            System.setProperty("apple.awt.rendering", "true");
+            System.setProperty("apple.awt.brushMetalLook", "true");
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty("apple.awt.window.position.forceSafeCreation", "true");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", PRODUCT_NAME);
+        }
+
+        applyTheme(getLookAndFeel());
+
+        // make sure we have nice window decorations.
+        JFrame.setDefaultLookAndFeelDecorated(true);
+        JDialog.setDefaultLookAndFeelDecorated(true);
+    }
+
+    public static void applyTheme(String theme) {
         try {
-            if (isPlatform(MAC_OS_X)) {
-                System.setProperty("apple.awt.rendering", "true");
-                System.setProperty("apple.awt.brushMetalLook", "true");
-                System.setProperty("apple.laf.useScreenMenuBar", "true");
-                System.setProperty("apple.awt.window.position.forceSafeCreation", "true");
-                System.setProperty("com.apple.mrj.application.apple.menu.about.name", PRODUCT_NAME);
+            setLookAndFeel(theme);
+            for (Window window : Window.getWindows()) {
+                SwingUtilities.updateComponentTreeUI(window);
             }
-
-            setLookAndFeel(getLookAndFeel());
-
-            // make sure we have nice window decorations.
-            JFrame.setDefaultLookAndFeelDecorated(true);
-            JDialog.setDefaultLookAndFeelDecorated(true);
-
         } catch (Exception ex) {
-            LOGGER.error("Error loading system look and feel.", ex);
+            LOGGER.error("Error applying look and feel.", ex);
         }
     }
 
