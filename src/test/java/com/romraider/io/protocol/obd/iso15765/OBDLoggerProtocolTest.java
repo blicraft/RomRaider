@@ -4,7 +4,6 @@ import static org.junit.Assert.assertArrayEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -64,16 +63,16 @@ public class OBDLoggerProtocolTest {
     }
 
     @Test
-    public void testConvertToByteAddressesHandlesVariableLengths() throws Exception {
+    public void testConvertToByteAddressesHandlesVariableLengths() {
         OBDLoggerProtocol protocol = new OBDLoggerProtocol();
         Collection<EcuQuery> queries = Arrays.<EcuQuery>asList(
-                new StubQuery("0x1234", "0x5678"),
-                new StubQuery("0x9A"));
-        Method m = OBDLoggerProtocol.class.getDeclaredMethod("convertToByteAddresses", Collection.class);
-        m.setAccessible(true);
-        byte[][] addresses = (byte[][]) m.invoke(protocol, queries);
-        assertArrayEquals(new byte[]{0x12, 0x34}, addresses[0]);
-        assertArrayEquals(new byte[]{0x56, 0x78}, addresses[1]);
-        assertArrayEquals(new byte[]{(byte) 0x9A}, addresses[2]);
+                new StubQuery("0x1", "0x2345"),
+                new StubQuery("0x67"),
+                new StubQuery("0x89AB"));
+        byte[][] addresses = protocol.convertToByteAddresses(queries);
+        assertArrayEquals(new byte[]{0x01}, addresses[0]);
+        assertArrayEquals(new byte[]{0x23, 0x45}, addresses[1]);
+        assertArrayEquals(new byte[]{0x67}, addresses[2]);
+        assertArrayEquals(new byte[]{(byte) 0x89, (byte) 0xAB}, addresses[3]);
     }
 }

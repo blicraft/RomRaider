@@ -23,6 +23,7 @@ import static com.romraider.io.protocol.obd.iso15765.OBDProtocol.RESPONSE_NON_DA
 import static com.romraider.io.protocol.obd.iso15765.OBDResponseProcessor.extractResponseData;
 import static com.romraider.io.protocol.obd.iso15765.OBDResponseProcessor.filterRequestFromResponse;
 import static com.romraider.util.HexUtil.asHex;
+import static com.romraider.util.HexUtil.asBytes;
 import static com.romraider.util.ParamChecker.checkNotNull;
 import static com.romraider.util.ParamChecker.checkNotNullOrEmpty;
 import static java.lang.System.arraycopy;
@@ -165,21 +166,16 @@ public final class OBDLoggerProtocol implements LoggerProtocolOBD {
         return filteredQueries;
     }
 
-    private byte[][] convertToByteAddresses(Collection<EcuQuery> queries) {
-        int byteCount = 0;
+    byte[][] convertToByteAddresses(Collection<EcuQuery> queries) {
+        int addressCount = 0;
         for (EcuQuery query : queries) {
-            byteCount += query.getAddresses().length;
+            addressCount += query.getAddresses().length;
         }
-        final byte[][] addresses = new byte[byteCount][];
+        final byte[][] addresses = new byte[addressCount][];
         int i = 0;
         for (EcuQuery query : queries) {
-            final String[] addrs = query.getAddresses();
-            final byte[] bytes = query.getBytes();
-            final int addrLength = bytes.length / addrs.length;
-            for (int j = 0; j < addrs.length; j++) {
-                addresses[i] = new byte[addrLength];
-                arraycopy(bytes, j * addrLength, addresses[i], 0, addrLength);
-                i++;
+            for (String addr : query.getAddresses()) {
+                addresses[i++] = asBytes(addr);
             }
         }
         return addresses;
