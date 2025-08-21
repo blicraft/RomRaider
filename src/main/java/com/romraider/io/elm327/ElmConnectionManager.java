@@ -34,6 +34,9 @@ import com.romraider.io.connection.ConnectionProperties;
 import com.romraider.logger.ecu.comms.manager.PollingState;
 import com.romraider.logger.ecu.exception.SerialCommunicationException;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public final class ElmConnectionManager implements ConnectionManager {
     private ElmConnection connection;
 
@@ -42,6 +45,7 @@ public final class ElmConnectionManager implements ConnectionManager {
 
     private int elmMode = 0;
     private String portName;
+    private final Set<Integer> supportedPids = new HashSet<Integer>();
 
     public static enum ERROR_TYPE{NO_ERROR, UNKNOWN_PROTOCOL, ELM_NOT_FOUND,
     	ELM_REJECTED_REQUEST, ECU_NOT_FOUND}
@@ -54,10 +58,18 @@ public final class ElmConnectionManager implements ConnectionManager {
         checkNotNull(connectionProperties, "connectionProperties");
 
         this.portName = portName;
-    	this.connection = new ElmConnection(this.portName, baudrate);
+        this.connection = createConnection(this.portName, baudrate);
        // this.connectionProperties = connectionProperties;
        // timeout = connectionProperties.getConnectTimeout();
        // readTimeout = timeout;
+    }
+
+    protected ElmConnection createConnection(String portName, int baudrate) {
+        return new ElmConnection(portName, baudrate);
+    }
+
+    public Set<Integer> getSupportedPids() {
+        return new HashSet<Integer>(supportedPids);
     }
 
     @Override
@@ -224,22 +236,53 @@ public final class ElmConnectionManager implements ConnectionManager {
 	                if (LOGGER.isDebugEnabled())
                         LOGGER.debug("ELM327 accepted Protocol Init!");
 
-	            LOGGER.info("Current Protocol: " + getCurrentProtcol());
+                    LOGGER.info("Current Protocol: " + getCurrentProtcol());
 
-	            result = sendAndWaitForChar("0100", 5000, ">").trim();
-	            if (LOGGER.isDebugEnabled())
+                    result = sendAndWaitForChar("0100", 5000, ">").trim();
+                    result = result.replace("SEARCHING...", "").trim();
+                    if (LOGGER.isDebugEnabled())
                     LOGGER.debug("ECU Init Response: " + result);
 
-	            //TODO: Check the actual Pids that are supported,
-	            //this is more of an did-the-ecu-respond check.
-	            //Might contain "SEARCHING..."
-	            if(result.contains("NO DATA") ||  result.split(" ").length <= 4) {
-	            	return ERROR_TYPE.ECU_NOT_FOUND;
-	            }
+                    if(result.isEmpty() || result.contains("NO DATA")) {
+                        LOGGER.warn("ELM327 reported no data for PID 0100");
+                        return ERROR_TYPE.ECU_NOT_FOUND;
+                    }
 
-	            //byte[] byteResponse = extractResponseBytes(result);
+                    String[] tokens = result.replace("\r", " ").replace("\n", " ").split("\\s+");
+                    int start = -1;
+                    for(int i = 0; i <= tokens.length - 6; i++) {
+                        if(tokens[i].equalsIgnoreCase("41") && tokens[i+1].equalsIgnoreCase("00")) {
+                            start = i;
+                            break;
+                        }
+                    }
 
-	            return ERROR_TYPE.NO_ERROR;
+                    if(start == -1) {
+                        LOGGER.warn("Unexpected ECU response: " + result);
+                        return ERROR_TYPE.ECU_NOT_FOUND;
+                    }
+
+                    supportedPids.clear();
+                    try {
+                        for(int i = 0; i < 4; i++) {
+                            int b = Integer.parseInt(tokens[start + 2 + i], 16);
+                            for(int bit = 0; bit < 8; bit++) {
+                                if((b & (1 << (7 - bit))) != 0) {
+                                    supportedPids.add(1 + i * 8 + bit);
+                                }
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        LOGGER.warn("Failed to parse PID bitmask: " + result, e);
+                        return ERROR_TYPE.ECU_NOT_FOUND;
+                    }
+
+                    if(supportedPids.isEmpty()) {
+                        LOGGER.warn("No supported PIDs returned by ECU for 0100");
+                        return ERROR_TYPE.ECU_NOT_FOUND;
+                    }
+
+                    return ERROR_TYPE.NO_ERROR;
 
 	        } catch (Exception e) {
 	            throw new SerialCommunicationException(e);
