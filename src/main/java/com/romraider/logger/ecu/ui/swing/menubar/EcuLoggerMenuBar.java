@@ -129,7 +129,7 @@ public class EcuLoggerMenuBar extends JMenuBar {
         RadioButtonMenuItem autoRefresh = new RadioButtonMenuItem(rb.getString("COMREFRESH"), VK_E, getKeyStroke(VK_E, CTRL_MASK), new ComPortAutoRefreshAction(logger), logger.getSettings().getRefreshMode());
         autoRefresh.setToolTipText(rb.getString("COMREFRESHTT"));
         settingsMenu.add(autoRefresh);
-        RadioButtonMenuItem elmEnabled = new RadioButtonMenuItem(rb.getString("ELM327ENABLED"), VK_C, getKeyStroke(VK_C, CTRL_MASK), new ElmEnabledAction(logger), logger.getSettings().getElm327Enabled());
+        RadioButtonMenuItem elmEnabled = new RadioButtonMenuItem(rb.getString("ELM327ENABLED"), VK_C, getKeyStroke(VK_C, CTRL_MASK), new ElmEnabledAction(logger), logger.getSettings().isElm327Enabled());
         elmEnabled.setToolTipText(rb.getString("ELM327ENABLEDTT"));
         elmEnabled.setSelected(false);
         logger.getComponentList().put("elmEnabled", elmEnabled);

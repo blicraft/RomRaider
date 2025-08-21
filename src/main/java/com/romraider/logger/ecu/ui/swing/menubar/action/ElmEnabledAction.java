@@ -31,7 +31,7 @@ public final class ElmEnabledAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent actionEvent) {
         try {
-            logger.setElmEnabled((Boolean) getValue(SELECTED_KEY));
+            logger.setElm327Enabled((Boolean) getValue(SELECTED_KEY));
         } catch (Exception e) {
             logger.reportError(e);
         }
