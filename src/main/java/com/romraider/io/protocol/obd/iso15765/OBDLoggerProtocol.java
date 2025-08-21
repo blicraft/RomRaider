@@ -166,19 +166,21 @@ public final class OBDLoggerProtocol implements LoggerProtocolOBD {
     }
 
     private byte[][] convertToByteAddresses(Collection<EcuQuery> queries) {
-        int byteCount = 0;
+        int addrCount = 0;
         for (EcuQuery query : queries) {
-            byteCount += query.getAddresses().length;
+            addrCount += query.getAddresses().length;
         }
-        final int ADDRESS_SIZE = 1;
-        // TODO how do we handle variable address lengths ?
-        final byte[][] addresses = new byte[byteCount][ADDRESS_SIZE];
+
+        final byte[][] addresses = new byte[addrCount][];
         int i = 0;
         for (EcuQuery query : queries) {
-            final int addrLength = query.getBytes().length;
             final byte[] bytes = query.getBytes();
-            for (int j = 0; j < bytes.length / addrLength; j++) {
-                arraycopy(bytes, j * addrLength, addresses[i++], 0, addrLength);
+            final int count = query.getAddresses().length;
+            final int addrLength = bytes.length / count;
+            for (int j = 0; j < count; j++) {
+                addresses[i] = new byte[addrLength];
+                arraycopy(bytes, j * addrLength, addresses[i], 0, addrLength);
+                i++;
             }
         }
         return addresses;
