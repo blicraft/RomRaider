@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
+import java.util.HashMap;
 
 import com.romraider.io.connection.ConnectionProperties;
 import com.romraider.logger.ecu.definition.EcuDefinition;
@@ -227,6 +228,7 @@ public class Settings implements Serializable {
     private int loggerSelectedTabIndex;
     private int loggerSelectedGaugeIndex = 0;
     private boolean loggerParameterListState = true;
+    private Map<String, Integer> tabWarningThresholds = new HashMap<String, Integer>();
     private ConnectionProperties loggerConnectionProperties;
     private Map<String, EcuDefinition> loggerEcuDefinitionMap;
     private Map<String, String> loggerPluginPorts;
@@ -712,6 +714,22 @@ public class Settings implements Serializable {
 
     public boolean getLoggerParameterListState() {
         return loggerParameterListState;
+    }
+
+    public Map<String, Integer> getTabWarningThresholds() {
+        return tabWarningThresholds;
+    }
+
+    public void setTabWarningThresholds(Map<String, Integer> thresholds) {
+        this.tabWarningThresholds = thresholds;
+    }
+
+    public int getTabWarningThreshold(String tab) {
+        return tabWarningThresholds.containsKey(tab) ? tabWarningThresholds.get(tab) : 0;
+    }
+
+    public void setTabWarningThreshold(String tab, int threshold) {
+        tabWarningThresholds.put(tab, threshold);
     }
 
     public void setRefreshMode(boolean selected) {
