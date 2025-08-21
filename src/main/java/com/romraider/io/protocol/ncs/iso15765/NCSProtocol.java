@@ -62,12 +62,13 @@ public final class NCSProtocol implements ProtocolNCS {
     public static final byte ECU_ID_SID_RESPONSE = (byte) 0x50;
     public static final byte READ_SID_21_RESPONSE = (byte) 0x61;
     public static final byte READ_SID_GRP_RESPONSE = (byte) 0x62;
-    public static final byte ECU_RESET_COMMAND = (byte) 0x04;
-    public static final byte ECU_RESET_RESPONSE = (byte) 0x44;
+    public static final byte ECU_RESET_COMMAND = (byte) 0x11;
+    public static final byte ECU_RESET_RESPONSE = (byte) 0x51;
     public static final byte NCS_NRC = (byte) 0x7F;
     public static final int RESPONSE_NON_DATA_BYTES = 4;
     public static final int ADDRESS_SIZE = 4;
     public static Module module;
+    private byte resetCode;
 
     // not implemented
     @Override
@@ -231,12 +232,12 @@ public final class NCSProtocol implements ProtocolNCS {
     }
 
     @Override
-    //TODO: not yet implemented
-    // maybe use: Service $11 with 0x80 - module reset
+    // Implements Service $11 ECU Reset with configurable reset code
     public byte[] constructEcuResetRequest(Module module, int resetCode) {
         checkNotNull(module, "module");
         NCSProtocol.module = module;
-        return buildRequest((byte) 0, false, new byte[]{ECU_RESET_COMMAND});
+        this.resetCode = (byte) resetCode;
+        return buildRequest(ECU_RESET_COMMAND, false, new byte[]{(byte) resetCode});
     }
 
     @Override
@@ -246,14 +247,23 @@ public final class NCSProtocol implements ProtocolNCS {
     }
 
     @Override
-    //TODO: not yet implemented
+    // Validate ECU reset response against expected sequence
     public void checkValidEcuResetResponse(byte[] processedResponse) {
         checkNotNullOrEmpty(processedResponse, "processedResponse");
-        byte responseType = processedResponse[4];
-        if (responseType != ECU_RESET_RESPONSE) {
+        // expected response: [ECU address][ECU_RESET_RESPONSE][resetCode]
+        byte[] expected = new byte[module.getAddress().length + 2];
+        System.arraycopy(module.getAddress(), 0, expected, 0, module.getAddress().length);
+        expected[4] = ECU_RESET_RESPONSE;
+        expected[5] = resetCode;
+        if (processedResponse.length < expected.length) {
             throw new InvalidResponseException(
-                    "Unexpected OBD Reset response: " +
-                    asHex(processedResponse));
+                    "Unexpected NCS Reset response: " + asHex(processedResponse));
+        }
+        for (int i = 0; i < expected.length; i++) {
+            if (processedResponse[i] != expected[i]) {
+                throw new InvalidResponseException(
+                        "Unexpected NCS Reset response: " + asHex(processedResponse));
+            }
         }
     }
 
