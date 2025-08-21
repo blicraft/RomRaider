@@ -49,6 +49,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSeparator;
+import javax.swing.UIManager;
 
 import com.romraider.Settings;
 import com.romraider.editor.ecu.ECUEditor;
@@ -58,6 +59,7 @@ import com.romraider.maps.Rom;
 import com.romraider.maps.Table;
 import com.romraider.net.BrowserControl;
 import com.romraider.ramtune.test.RamTuneTestApp;
+import com.romraider.swing.LookAndFeelManager;
 import com.romraider.util.ResourceUtil;
 import com.romraider.util.SettingsManager;
 
@@ -388,10 +390,11 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 						ERROR_MESSAGE);
 			}
 
-		} else if (e.getSource() == settings) {
-			SettingsForm form = new SettingsForm();
-			form.setLocationRelativeTo(parent);
-			form.setVisible(true);
+                } else if (e.getSource() == settings) {
+                        SettingsForm form = new SettingsForm();
+                        form.setLocationRelativeTo(parent);
+                        form.setVisible(true);
+                        LookAndFeelManager.applyTheme(UIManager.getLookAndFeel().getClass().getName());
 
 		} else if (e.getSource() == compareImages) {
 			CompareImagesForm form = new CompareImagesForm(parent.getImages(), parent.getIconImage());
